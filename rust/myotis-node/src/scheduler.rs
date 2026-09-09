@@ -744,3 +744,7 @@ fn fatal_completion() -> ! {
     // Node documents fatal_error as non-returning; the FFI signature is void.
     std::process::abort()
 }
+
+#[cfg(feature = "qualification")]
+#[path = "qualification.rs"]
+mod qualification;

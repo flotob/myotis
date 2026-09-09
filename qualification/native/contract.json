@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "baseSource": "02a183d86474a263cf8e85e5c2c2399672645535",
+  "runtimeHost": "disposable-linux-only",
+  "cli": ["NODE", "qualification/native/run.mjs", "--addon", "ABSOLUTE_ADDON", "--sha256", "LOWERCASE_SHA256", "--kind", "production|default-build|fixture", "--case", "CASE", "--output", "NEW_ABSOLUTE_OUTPUT", "--executor-manifest", "ABSOLUTE_EXECUTOR_JSON", "--source-proof", "ABSOLUTE_SOURCE_PROOF_JSON"],
+  "environment": {"MYOTIS_QUALIFICATION_DISPOSABLE": "1"},
+  "childEnvironment": {"UV_THREADPOOL_SIZE": "1", "MYOTIS_QUALIFICATION_DISPOSABLE": "1", "LANG": "C"},
+  "executorManifest": {
+    "schema": 1,
+    "disposable": true,
+    "hostname": "ACTUAL_HOSTNAME_VISIBLE_INSIDE_NAMESPACE",
+    "case": "CASE",
+    "network": "deny-all-except-loopback",
+    "watchdog": "linux-pidfd-namespace",
+    "timeoutSeconds": 15,
+    "outerTimeoutSeconds": 30,
+    "evidence": "OWNED_EXECUTOR_EVIDENCE_REFERENCE"
+  },
+  "timeoutsMs": {"runnerObservationFailure": 12000, "externalNodeEnvelope": 15000, "externalOuterContainment": 30000, "nativeGateMaximum": 10000, "nativeEntryWait": 1000},
+  "signals": "No PID signals from JS. All deadline expiry, outer signal or missing completion is FAIL; executor owns pidfd/namespace containment.",
+  "stdoutProtocol": "Child writes one JSON object per line. Parent retains raw child stdout in stdout.jsonl and emits one final JSON result on its own stdout after natural child exit.",
+  "commonEventFields": {"type": "string", "atMs": "Node performance.now() timestamp"},
+  "nativeObservation": {"id": "bounded ASCII job id", "entries": "integer 0 or 1", "exits": "integer 0 or 1", "requestId": "original scheduler request ID", "thread": "myotis-node-0|myotis-node-1", "terminal": "not_entered|active|cancelled|released|finite|safety_limit", "enteredUs": "microseconds from gate creation", "exitedUs": "microseconds from gate creation", "released": "boolean"},
+  "commonPassRequirements": ["runner exit 0 without signal", "child exit 0 without signal", "empty child stderr", "exactly one loaded event", "exactly one matching case-pass event", "zero case-fail events", "no malformed/truncated output", "no 12s observation deadline", "fixture accounting-zero event pending=requests=active=queued=0 and not poisoned", "external executor final record confirms no deadline/forced containment"],
+  "cases": {
+    "a-idle-owner-exit": {"kind": ["production", "default-build"], "events": ["loaded", "created", "stop-return", "case-pass"], "assertions": ["ABI25", "all four qualification exports absent", "foreign Worker status empty/read denied/stop preserves original owner", "owner stop removes Created handle", "unknown second stop no-op", "Worker natural exit0 and process natural exit0"]},
+    "b-dns-file-responsive": {"kind": ["fixture"], "events": ["native-entered", "libuv-live", "settlement", "accounting-zero", "case-pass"], "assertions": ["native gate remains active and unreleased before and after both libuv probes", "dns.lookup callback (including EAI error) and owned file read complete within2000ms", "later native released exit and one settlement"]},
+    "b-queued-cancel": {"kind": ["fixture"], "events": ["native-entered", "stop-enter", "stop-return", "settlement", "accounting-zero", "case-pass"], "assertions": ["two unrelated active handles occupy both workers", "two target jobs queued with entries0", "target stop<200ms", "target settlements occur after stop returns and both equal request cancelled", "target entries stay0", "unrelated gates stay active through target settlements then settle later"]},
+    "b-handle-capacity": {"kind": ["fixture"], "events": ["native-entered", "per-handle-refusal", "settlement", "accounting-zero", "case-pass"], "assertions": ["before pending4 requests4 active1 queued3 (<total cap32)", "fifth native scheduler busy", "refusal does not change pending/requests/active/queued/nextId", "refused and queued gates never enter", "stop cancels active and three queued once"]},
+    "b-active-stop-drain": {"kind": ["fixture"], "events": ["native-entered", "stop-enter", "stop-return", "settlement", "created-pause-return", "accounting-zero", "case-pass"], "assertions": ["stop<200ms with5ms fixture polling", "native cancelled exit before stop return", "TSFN settlement after stop return", "Created pause false but cancels entered scheduler job within200ms", "no Running reader claim"]},
+    "b-tsfn-natural-exit": {"kind": ["fixture"], "events": ["native-entered", "host-idle-no-timers", "settlement", "accounting-zero", "case-pass"], "assertions": ["no JS timers/IPC/Worker keepalive during entered finite gate wait", "native gate elapsed>=1000000us", "finite settlement precedes natural process exit0", "Created handle cleaned by actual env hook"]},
+    "b-worker-terminate-reuse": {"kind": ["fixture"], "events": ["native-entered", "environment-terminated", "accounting-zero", "case-pass"], "assertions": ["two sequential Worker generations", "each LIVE_WORKERS0->2->0", "terminate<1000ms", "actual Worker exit1 equals terminate result", "native gate entered/exited once with cancelled terminal", "parent addon observation does not initialize scheduler"]}
+  },
+  "excludedClaims": ["exact unmodified addon active work", "TLS Submission retrieval", "Submission-to-Operation propagation", "reader/network/EVM cancellation", "90s operation budget", "arbitrary indivisible work hard-stop bound"]
+}
