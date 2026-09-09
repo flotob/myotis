@@ -5,6 +5,10 @@ adds no JavaScript package dependencies. The production scheduler's only change
 is the cfg-gated child module at the end of `scheduler.rs`; its function bodies
 and `admission.rs` remain identical to PR420 `02a183d8`.
 
+[Recorded Linux A/B results](RESULTS-linux-bb963e00.md) cover the reviewed
+`c8cc1554` harness and exact listed artifacts; real-reader layer C remains
+unqualified.
+
 Do not run either JS file on the primary Mac. The parent refuses non-Linux hosts
 and requires an executor manifest plus `MYOTIS_QUALIFICATION_DISPOSABLE=1`.
 These checks are explicit operator interlocks, not proof that a caller-created
